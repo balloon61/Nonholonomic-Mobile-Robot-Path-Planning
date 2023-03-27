@@ -1,18 +1,14 @@
-# Clone mm3 under ~/catkin_src/src and type the following command
+# Introduction
 
-cd ~/catkin_ws
-catkin_make 
-source devel/setup.bash
+## Requirement
 
-=========== Control Robot with Keyboard ===============
+## Installation
 
-roslaunch mm3 demo.launch
+## Reed-Shepp Curve
 
-# In a new terminal, type:
-rosrun mm3 arm_control.py
+## Map
 
-=========== Robot Navigation and Arm Manipulation Demo =============
+## Test
 
-roslaunch mm3 demo.launch
-# In a new terminal, type:
-rosrun mm3 self_control.py
+## Visualization
+
