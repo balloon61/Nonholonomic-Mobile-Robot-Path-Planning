@@ -23,6 +23,16 @@ catkin_make
 A list of the Reed-Shepp function testing results are shown in this section, the result of each test point is sorted by the total length of the Reed-Shepp Curve.
 
 ```
+# Before you test the Reed-Shepp curve, you should run the following command line first
+roscore
+# Open a new terminal and go to your WS
+cd ~/WS_NAME
+source devel/setup.bash
+rosrun mm3 rs_test.py -x {x_pos} -y {y_pos} -theta {theta_pos}
+```
+
+The results are shown as follows:
+```
 [INFO] [1680115919.265895]: goal pose (0.5, 0.5, 1.5)
 Direction: Forward, Steering: Left, Length: 0.5468855919024702
 Direction: Backward, Steering: Right, Length: 0.330041103168711
@@ -99,9 +109,17 @@ Building a world in Gazebo, and using the map_server in ROS to build the Map so 
 ![Screenshot from 2023-03-26 20-32-11](https://user-images.githubusercontent.com/55338365/227834849-44c5d3f8-aa52-473b-8b85-2ed2f0b968b0.png)
 ![Screenshot from 2023-03-26 20-30-51](https://user-images.githubusercontent.com/55338365/227834856-3c7e17a6-2e15-470d-a1ac-2c53abae4acc.png)
 
-## Test
-
+## Run the code/Test
 A test of the full algorithm is provided in this section.
+```
+# Several step to do before you run the code
+cd ~/WS_NAME
+source devel/setup.bash
+roslaunch mm3 gazebo.launch
+roslaunch mm3 move_base.launch
+rosrun mm3 main.py
+```
+
 
 ## Visualization
 
