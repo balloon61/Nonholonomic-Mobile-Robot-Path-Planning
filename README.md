@@ -1,13 +1,27 @@
 # Nonholonomic Mobile Robot Path Planning
 
-
 ## Introduction
+This repository implements Reed-Shepp curve combine with the Dijkstra global planner in ROS. When a goal pose is setted, this algorithm will subscribe the global path, split it to several waypoints, and design a collision free Reed-Shepp curve between waypoints.  
 
 ## Requirement
+ROS (onlu tested in noetic), Gazebo 11, numpy, math, bidict
 
 ## Installation
 
+```
+# create a ROS workspace
+mkdir -p /WS_NAME/src
+# go to the workspace 
+cd ~/WS_NAME/src
+# clone the repository
+git clone https://github.com/balloon61/Nonholonomic-Mobile-Robot-Path-Planning.git
+cd ..
+catkin_make
+```
+
 ## Reed-Shepp Curve
+
+A list of test points are shown in this section.
 
 ## Map
 
