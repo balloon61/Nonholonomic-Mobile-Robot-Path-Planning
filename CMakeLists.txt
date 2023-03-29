@@ -13,6 +13,6 @@ foreach(dir config launch meshes urdf)
 		DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/${dir})
 endforeach(dir)
 
-catkin_install_python(PROGRAMS nodes/self_control.py nodes/transform.py nodes/basic_geometry.py nodes/collision_check.py
+catkin_install_python(PROGRAMS nodes/transform.py nodes/geometry.py 
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

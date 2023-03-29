@@ -35,7 +35,9 @@ class Global_Path:
         self.wait_for_path = True
 
     def Get_Waypoints(self, interval:int):
-        
+        """
+        Return interval + 1 points from the starting point to the end point
+        """
         i = 0
         num = len(self.path)
 
@@ -48,5 +50,7 @@ class Global_Path:
 
 
     def Clear_Waypoints(self):
-
+        """
+        Reset the list of waypoints
+        """
         self.way_points = []

@@ -68,6 +68,8 @@ class RS_Path_Collision_Check:
     def __init__(self, RSpath:list(), map_topic:string="map", path_topic:string="/move_base/DWAPlannerROS/global_plan"):
         self.RSpath = RSpath
         self.map = Map(map_topic=map_topic)
+        self.map.wait_for_readmap()
+        self.map.wait_for_readmapinfo()
         self.global_path = Global_Path(path_topic=path_topic) 
     # def __init__(self):
     # This init is used for sub function checking
@@ -203,20 +205,37 @@ class ReedShepp_Path:
             length += abs(sub.distance)
         return length
     
-    def find_path(self, start: np.ndarray, goal: np.ndarray)->list:
-        # 
-        self.collision_checker.global_path.Get_Waypoints(interval=3)
-        current_point = start
+    def find_path(self) -> list():
+
+        rospy.loginfo("please set your goal point via move base client or Rviz")
+        self.global_path.wait_for_path()
+
+        number_of_waypoints = 3
+        self.collision_checker.global_path.Get_Waypoints(interval=number_of_waypoints)
+        
         total_path = list()
-        for way_pts in self.collision_checker.global_path.way_points:
+        rospy.loginfo("waypoints:", self.collision_checker.global_path.way_points)
+        start = self.collision_checker.global_path.way_points[0]
+
+        frame1 = tf(3)
+        frame2 = tf(3)
+
+        frame1.set_translation(start.pose.position.x, start.pose.position.y, 0)
+        _, _, yaw = get_rotation(start.pose.orientation)
+        frame1.set_rotation(rotvec=[0., 0., yaw]
+                            )
+        for way_pts in self.collision_checker.global_path.way_points[1:-1]:
+
             
-            
+            frame2.set_translation(way_pts.pose.position.x, way_pts.pose.position.y, 0)
+            _, _, yaw2 = get_rotation(way_pts.pose.orientation)
+            frame2.set_rotation(rotvec=[0., 0., yaw2])      
 
             # Transofrmation
-            GoalfromStart = current_point.transformation(way_pts)
-            x, y= GoalfromStart.t_vec[:2]
+            GoalfromStart = frame1.transformation(frame2)
+            x, y = GoalfromStart.t_vec[:2]
             theta = GoalfromStart.r_vec[2]
-            # multiply ration
+            # divide by radius
             x = x / self.rad
             y = y / self.rad
             # find Reed-Shepp path
@@ -235,8 +254,11 @@ class ReedShepp_Path:
                     total_path.append(path)
                     break
 
-            current_point = way_pts
-            
+            frame1 = frame2
+
+            # frame1.set_translation(way_pts.pose.position.x, way_pts.pose.position.y, 0)
+            # _, _, yaw = get_rotation(way_pts.pose.orientation)
+            # frame1.set_rotation(rotvec=[0., 0., yaw1])  
         return total_path
 
 
