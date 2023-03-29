@@ -55,10 +55,6 @@ Direction: Backward, Steering: Straight, Length: 1.4658807421549507
 Direction: Backward, Steering: Left, Length: 1.5707963267948966
 Direction: Forward, Steering: Right, Length: 0.5477379455390636
 
-Direction: Forward, Steering: Left, Length: 0.5468855919024702
-Direction: Backward, Steering: Right, Length: 0.330041103168711
-Direction: Forward, Steering: Left, Length: 0.6230733049288188
-
 [INFO] [1680115919.268779]: goal pose (0.5, 0.5, 0.5)
 Direction: Backward, Steering: Right, Length: 0.27176064354353047
 Direction: Forward, Steering: Left, Length: 0.5886963580423875
@@ -76,10 +72,6 @@ Direction: Forward, Steering: Left, Length: 1.6110372479444264
 Direction: Forward, Steering: Left, Length: 2.030555405645366
 Direction: Backward, Steering: Right, Length: 0.18935410885979906
 Direction: Backward, Steering: Left, Length: 1.719909514505165
-
-Direction: Backward, Steering: Right, Length: 0.27176064354353047
-Direction: Forward, Steering: Left, Length: 0.5886963580423875
-Direction: Backward, Steering: Right, Length: 0.3604570015859183
 
 [INFO] [1680115919.272154]: goal pose (0.5, -0.5, 1.5)
 Direction: Forward, Steering: Right, Length: 0.0933575602527773
@@ -99,11 +91,6 @@ Direction: Backward, Steering: Right, Length: 1.5272402692133875
 Direction: Backward, Steering: Left, Length: 0.8102989147330824
 Direction: Forward, Steering: Right, Length: 0.8102989147330824
 Direction: Forward, Steering: Left, Length: 1.5933575602527768
-
-Direction: Forward, Steering: Right, Length: 0.0933575602527773
-Direction: Forward, Steering: Left, Length: 0.8102989147330824
-Direction: Backward, Steering: Right, Length: 0.8102989147330824
-Direction: Backward, Steering: Left, Length: 0.027240269213387514
 ```
 
 ## Map
