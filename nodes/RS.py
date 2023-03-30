@@ -7,15 +7,18 @@ sys.path.append('/utils')
 
 from calculation import *
 from transform import *
-from nodes.map import *
-from nodes.global_path import *
-from nodes.executor import *
-from nodes.geometry import *
+from map import *
+from map import *
+from global_path import *
+from executor import *
+from geometry import *
 # import nodes.tf_broadcaster as tf_broadcaster
 # from htransform import *
-from enum import Enum
+# from enum import Enum
 
 from bidict import bidict
+from itertools import chain
+from geometry_msgs.msg import PoseStamped
 
 
 EPS = 1e-6
@@ -65,14 +68,14 @@ class RS_Path_Collision_Check:
     use map object and path object
     """
 
-    def __init__(self, RSpath:list(), map_topic:string="map", path_topic:string="/move_base/DWAPlannerROS/global_plan"):
-        self.RSpath = RSpath
+    def __init__(self, map_topic:string="map", path_topic:string="/move_base/DWAPlannerROS/global_plan"):
+        self.RSpath = None
         self.map = Map(map_topic=map_topic)
-        self.map.wait_for_readmap()
-        self.map.wait_for_readmapinfo()
+        self.map.Wait_for_map_update()
         self.global_path = Global_Path(path_topic=path_topic) 
+
     # def __init__(self):
-    # This init is used for sub function checking
+    # This init is used for sub function testing
     #     self.RSpath = None
     #     # self.map = Map(map_topic="map")
     #     # self.Global_Path(path_topic="/move_base/DWAPlannerROS/global_plan") 
@@ -127,54 +130,51 @@ class RS_Path_Collision_Check:
 
         return False
     
-    # def get_line(self, start:np.ndarray, length:float, number_of_points:int, direction: int):
-    #     """
-    #     Input: start pose (np.array), length: this is provided by RS curve, num_of_points: how many point you want to check if there have collision with obstacle
-    #     Output: a list of points, from the begining pose to the end
-    #     This function using basic triangular function to calculate the intermediate point.
-    #     """
-    #     x, y, theta = start
-    #     line = list()
-    #     # direciotn = -1 (backward), 1 (forward)
-    #     point_distance = length / number_of_points * direction
-    #     for i in range(number_of_points + 1):
-    #         # There have totally NoP + 1 of points, including the begining point and the end point 
-    #         line.append([x + np.cos(theta) * i * point_distance, y + np.sin(theta) * i * point_distance, theta])
-
-    #     return line
-    
-    # def get_curve(self, start:np.ndarray, length:float, steering:int, dir:int, number_of_points:int=100, radius:float=1.):
-    #     """
-    #     Input: start pose (np.array), length: this is provided by RS curve, num_of_points: how many point you want to check if there have collision with obstacle
-    #            steering: 1 (left), -1 (right)
-    #     Output: a list of points, from the begining pose to the end
-    #     This function using basic triangular function to calculate the intermediate point.
-    #     """
-
-    #     x, y, theta = start
-    #     curve = list()
-    #     point_distance = length / (number_of_points * radius) 
-    #     center = np.array([-np.sin(theta) * steering * radius + x, np.cos(theta) * steering * radius + y, 0])
-    #     # if the radius is 1, then the length is the radian you turn.
-    #     for i in range(number_of_points + 1):
-    #         t = i * point_distance * dir * steering + theta 
-    #         new_point = center + np.array([radius * np.cos(t - np.pi / 2 * steering), radius * np.sin(t - np.pi / 2 * steering), t]) 
-            
-    #         curve.append(new_point.tolist())
-
-    #     return curve
-    
 
 
 class ReedShepp_Path:
+
     def __init__(self, constraint:float = 1.):
+        self.path_publisher = rospy.Publisher("RS_path", Path, queue_size=10)
+        rospy.sleep(1.0)
         self.path = []
         self.best_path = None
         self.rad = constraint
         self.collision_checker = RS_Path_Collision_Check()
         self.robot = ROBOT()
-        self.path_publisher = rospy.Publisher("RS_path", Path, queue_size=10)
+        self.RSPath_topic = Path()
 
+
+    def Publish_Path(self, total_path):
+        """
+        publish path topic 
+        """
+        self.show_path(total_path)
+        poses = []
+        points = self.collision_checker.Get_path_points(number_of_points=1050)
+        for pt in points:
+
+            newPose = PoseStamped()
+
+            x, y, yaw = pt
+            # rospy.loginfo(f"path points x: {x}, y: {y}, theta: {yaw}")
+
+            newPose.header = self.RSPath_topic.header
+            newPose.pose.position.x = x
+            newPose.pose.position.y = y
+            
+            quaternion = get_quaternion_from_euler(0, 0, yaw)
+            newPose.pose.orientation.x = quaternion[0]
+            newPose.pose.orientation.y = quaternion[1]
+            newPose.pose.orientation.z = quaternion[2]
+            newPose.pose.orientation.w = quaternion[3]
+
+            poses.append(newPose)
+
+        self.RSPath_topic.poses = poses
+        rospy.loginfo("publishing path")
+
+        # self.path_publisher.publish(self.RSPath_topic)
 
     def change_constraint(self, new_constraint:float):
         self.rad = new_constraint
@@ -184,15 +184,16 @@ class ReedShepp_Path:
         Print the detail of the path.
         """
         for p in path:
-            print(f"Direction: {p.direction}, Steering: {p.steering}, Length: {p.distance}")
-        print("\n\n")
+            print(f"Direction: {p.direction}, Steering: {p.steering}, Length: {abs(p.distance)}")
+        print("\n")
+
     def reset_path(self):
         """
         reset the RS path
         """
         self.path.clear()
 
-    def get_path_length(self, path: list) -> float:
+    def get_path_length(self, path: list()) -> float:
         """
         Get the length of the RS path
         """
@@ -206,28 +207,32 @@ class ReedShepp_Path:
         return length
     
     def find_path(self) -> list():
-
+        """
+        This function find the RS paths from the global path get from moveit
+        Gets a list of waypoint and design the RS curve from waypointt to next waypoint
+        """
+        # wait for global path update
         rospy.loginfo("please set your goal point via move base client or Rviz")
-        self.global_path.wait_for_path()
-
-        number_of_waypoints = 3
+        self.collision_checker.global_path.Wait_for_path_update()
+        self.RSPath_topic.header = self.collision_checker.global_path.header
+        # get way points
+        number_of_waypoints = 4
         self.collision_checker.global_path.Get_Waypoints(interval=number_of_waypoints)
         
         total_path = list()
-        rospy.loginfo("waypoints:", self.collision_checker.global_path.way_points)
+        # rospy.loginfo("waypoints:", self.collision_checker.global_path.way_points)
         start = self.collision_checker.global_path.way_points[0]
-
+        # initialize two frame
         frame1 = tf(3)
         frame2 = tf(3)
-
-        frame1.set_translation(start.pose.position.x, start.pose.position.y, 0)
+        # set up frame1
+        frame1.set_translation([start.pose.position.x, start.pose.position.y, 0])
         _, _, yaw = get_rotation(start.pose.orientation)
-        frame1.set_rotation(rotvec=[0., 0., yaw]
-                            )
+        frame1.set_rotation(rotvec=[0., 0., yaw])
         for way_pts in self.collision_checker.global_path.way_points[1:-1]:
 
-            
-            frame2.set_translation(way_pts.pose.position.x, way_pts.pose.position.y, 0)
+            # setup frame2
+            frame2.set_translation([way_pts.pose.position.x, way_pts.pose.position.y, 0])
             _, _, yaw2 = get_rotation(way_pts.pose.orientation)
             frame2.set_rotation(rotvec=[0., 0., yaw2])      
 
@@ -247,18 +252,27 @@ class ReedShepp_Path:
                 # the distance in path is actually radian so the straight line need to multiply by self.rad 
                 # PSCC = RS_Path_Collision_Check(path)
                 self.collision_checker.get_RSPath(path)
-                pts = self.collision_checker.Get_path_points(number_of_points=100)
-                
+                pts = self.collision_checker.Get_path_points(number_of_points=20)
                 # true if no collision, since the paths is already sorted, it return the shortest path without collision
                 if self.collision_checker.Collision_detect(pts) == False:
                     total_path.append(path)
                     break
+            rospy.loginfo("collision free RS path found")
+            self.show_path(total_path[-1])
+            # update frame1 to next frane
 
-            frame1 = frame2
+            frame1.set_translation([way_pts.pose.position.x, way_pts.pose.position.y, 0])
+            frame1.set_rotation(rotvec=[0., 0., yaw2])  
+            
 
-            # frame1.set_translation(way_pts.pose.position.x, way_pts.pose.position.y, 0)
-            # _, _, yaw = get_rotation(way_pts.pose.orientation)
-            # frame1.set_rotation(rotvec=[0., 0., yaw1])  
+        rospy.loginfo("Solution found")
+        for p in total_path:
+            self.show_path(p)
+        
+        flatten_total_path = list(chain.from_iterable(total_path))
+
+
+        self.Publish_Path(flatten_total_path)
         return total_path
 
 
@@ -277,7 +291,7 @@ class ReedShepp_Path:
         path_fns = [self.path1, self.path2, self.path3, self.path4, self.path7, self.path8, self.path9, self.path10, self.path11, self.path12]
         # test_path_fns = [self.path9]
 
-        paths = []
+        paths = list()
         # run all path function include original, timeflip, reflection, timeflip before reflection
         for path in path_fns:
 
@@ -294,11 +308,12 @@ class ReedShepp_Path:
 
         # remove empty paths
         paths = list(filter(None, paths))  
-        for p in paths:
-            self.show_path(p)    
+            
         # get the shortest path, but have not check the collision
         paths.sort(key=lambda x: self.get_path_length(x))
 
+        for p in paths:
+            self.show_path(p)
         return paths
 
     def timeflip(self, path: list()) -> list():
@@ -341,7 +356,6 @@ class ReedShepp_Path:
             v = mod2pi(phi - t)
             if v >= 0:
                 # Check whether the result is correct, only compare to the theta
-
                 if (abs(mod2pi(t + v - phi)) < EPS):
                     return [SubPath(t, 'Left', 'Forward'), SubPath(u, 'Straight', 'Forward'), SubPath(v, 'Left', 'Forward')]
                     
@@ -408,6 +422,7 @@ class ReedShepp_Path:
 
       #  return None
 
+    # never found a solution
     def path5(self, x, y, phi):
 
         xi = x - math.sin(phi)
@@ -481,7 +496,7 @@ class ReedShepp_Path:
                 return [SubPath(t, 'Left', 'Forward'), SubPath(math.pi / 2, 'Right', 'Backward'), SubPath(u, 'Straight', 'Backward'), SubPath(v, 'Left', 'Backward')]
        # return None
 
-
+    # never found a solution
     def path9(self, x, y, phi):
         """
 
@@ -520,6 +535,7 @@ class ReedShepp_Path:
                 return [SubPath(t, 'Left', 'Forward'), SubPath(math.pi / 2, 'Right', 'Backward'), SubPath(u, 'Straight', 'Backward'), SubPath(v, 'Right', 'Backward')]
       #  return None
 
+    # never found a solution
     def path11(self, x, y, phi):
         """
         Formula 8.10 (2): CSC[pi/2]|C
@@ -541,7 +557,7 @@ class ReedShepp_Path:
 
        # return None
 
-    # Check, the checking function is a little bit strange but the result is correct
+    # Check, result is correct
     def path12(self, x, y, phi):
         """
         Formula 8.11: C|C[pi/2]SC[pi/2]|C
@@ -565,20 +581,20 @@ class ReedShepp_Path:
 
 
 
-class Collision_detection:
-    def __init__(self) -> None:
-        self.map = None
-        self.res = []
+# class Collision_detection:
+#     def __init__(self) -> None:
+#         self.map = None
+#         self.res = []
 
-    def Get_map(self, map: list, res:float = 0.05):
-        self.map = map
-        self.res = res
+#     def Get_map(self, map: list, res:float = 0.05):
+#         self.map = map
+#         self.res = res
     
-    def collision_check(self, path:ReedShepp_Path):
-        for x, y in path:
-            if map[x, y] == 0:
-                return False
-        return True
+#     def collision_check(self, path:ReedShepp_Path):
+#         for x, y in path:
+#             if map[x, y] == 0:
+#                 return False
+#         return True
 
-    def cloest_grid(self, x, y):
-        return x, y
+#     def cloest_grid(self, x, y):
+#         return x, y

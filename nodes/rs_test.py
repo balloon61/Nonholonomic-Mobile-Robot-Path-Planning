@@ -4,30 +4,76 @@ import numpy as np
 import rospkg
 import rospy
 
-import sys, os
 from RS import *
+import argparse
 
-
-
-
-
-def test_tf(start: tf, goal: tf)->list:
-    # Transofrmation
-    t = start.transformation(goal)
-    # T = start.inverse_matrix().get_matrix() @ goal.get_matrix()
-    # print(T)
-    # x, y, theta = T[0, 3], T[1, 3], math.atan2(T[0, 1], T[0, 0])
-    x, y= t.t_vec[:2]
-    theta = t.r_vec[2]
-    print(x, y, theta) 
-    print(f"rotation vector: {t.r_vec}\n translation vector: {t.t_vec}")
-
-
-check = False
 if __name__ == '__main__':
-    rospy.init_node("RS_test")
 
-    rospy.loginfo("Building the list of observer positions.")
+    rospy.init_node("RS")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-x','--x', nargs='+', type=float, required=True)
+    parser.add_argument('-y','--y', nargs='+', type=float, required=True)
+    parser.add_argument('-theta','--theta', nargs='+', type=float, required=True)
+    args = parser.parse_args()
+
+
+    RS_path = ReedShepp_Path(constraint=1.0)
+    
+    
+    rospy.loginfo(f"goal pose ({args.x[0]}, {args.y[0]}, {args.theta[0]})")
+        
+    paths = RS_path.find_RSpath(args.x[0] , args.y[0], args.theta[0])
+
+    # poses = [[0.5, 0.5, 1.5], [0.5, 0.5, 0.5], [0.5, -0.5, 1.5], [1.5, 1.5, 0.5], [1.5, 1.5, 0.0], [1.5, 1.5, 1.5], [2, 2, 3], [3, 0.2, 0]]
+
+
+    # RS function test
+    # for p in poses:
+        # x, y, theta = p
+
+        # rospy.loginfo(f"goal pose ({x}, {y}, {theta})")
+        
+        # paths = RS_path.find_RSpath(x , y, theta)
+        # # RS_path.show_path(paths[0])
+        # RS_path.reset_path()
+
+    # Algorithm test
+
+
+
+    rospy.spin()
+
+
+
+
+
+
+
+
+
+
+
+
+    # RPCC = RS_Path_Collision_Check()
+    # RPCC.get_RSPath(paths[0])
+    # pp = RPCC.Get_path(interval=4)
+    # print(pp)
+
+# def test_tf(start: tf, goal: tf)->list:
+#     # Transofrmation
+#     t = start.transformation(goal)
+#     # T = start.inverse_matrix().get_matrix() @ goal.get_matrix()
+#     # print(T)
+#     # x, y, theta = T[0, 3], T[1, 3], math.atan2(T[0, 1], T[0, 0])
+#     x, y= t.t_vec[:2]
+#     theta = t.r_vec[2]
+#     print(x, y, theta) 
+#     print(f"rotation vector: {t.r_vec}\n translation vector: {t.t_vec}")
+
+
+# check = False
+
 
     # Test map subscirver
     # test_map_sub = Map("map")
@@ -66,12 +112,7 @@ if __name__ == '__main__':
     # test_path_sub = Global_Path
 
 
-    RS_path = ReedShepp_Path(constraint=1.0)
-    paths = RS_path.find_RSpath(1.5, 1.5, 1)
-    RPCC = RS_Path_Collision_Check()
-    RPCC.get_RSPath(paths[0])
-    pp = RPCC.Get_path(interval=4)
-    print(pp)
+
     # points = RPCC.Get_path(interval=100)
     # points = RPCC.get_line(np.array([1.0, 2.0, np.pi/2]), 1.0, 100, 1)
     # points1 = RPCC.get_curve(np.array([1.0, 2.0, np.pi / 2]), length=2 * np.pi, steering=1, dir=1, number_of_points=4, radius=2.0)
@@ -146,7 +187,6 @@ if __name__ == '__main__':
     # print(test_map_sub.map)
 
 
-    rospy.spin()
 
 
  

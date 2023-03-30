@@ -3,6 +3,7 @@ import rospy
 import numpy as np
 
 from transform import *
+import std_msgs.msg
 
 from nav_msgs.msg import Path
 
@@ -11,6 +12,9 @@ import string
 # 1. Subscriber for the move_base global plan
 class Global_Path:
     def __init__(self, path_topic:string) -> None:
+        """
+        Global path object
+        """
         self.map = None
 
         # self.map_sub = rospy.Subscriber(map_topic, OccupancyGrid, self.map_callback)
@@ -18,18 +22,21 @@ class Global_Path:
         self.path = None
         self.wait_for_path = True
         self.way_points = list()
+        self.header = std_msgs.msg.Header()
         # self.Wait_for_map_update()
 
     def path_callback(self, data):
         
         rospy.loginfo("Reading Path.")
         self.path = data.poses
+        self.header = data.header
         self.wait_for_path = False
 
 
     def Wait_for_path_update(self):
         while(self.wait_for_path):
             rospy.loginfo("Waiting for Path Update.")
+            rospy.sleep(1.0)
         rospy.loginfo("Path Update.")
 
         self.wait_for_path = True
@@ -42,7 +49,7 @@ class Global_Path:
         num = len(self.path)
 
         while i < num - 1:
-            
+            print("waypoints:", self.path[i])
             self.way_points.append(self.path[i])
             i = i + int(num / interval)
         

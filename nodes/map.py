@@ -7,14 +7,15 @@ from transform import *
 # sys.path.append('../')
 
 from nav_msgs.msg import OccupancyGrid, MapMetaData
-from nav_msgs.msg import Path
-
 import string
 
 
 
 class Map:
     def __init__(self, map_topic:string="map", map_info_topic:string="map_metadata") -> None:
+        """
+        map object
+        """
         self.map = None
 
         # self.map_sub = rospy.Subscriber(map_topic, OccupancyGrid, self.map_callback)
@@ -64,13 +65,14 @@ class Map:
         """
         while(self.wait_for_readmap and self.wait_for_readmapinfo):
             rospy.loginfo("Waiting for Map Update.")
+            rospy.sleep(1.0)
         rospy.loginfo("Map and Map info Update.")
     
     def getmap_value(self, pose:list()):
         """
         The input of this function is the pose: (x, y) of the robot
         """
-        x, y = pose
+        x, y, _ = pose
         pose_width, pose_height = int((x - self.origin.position.x) / self.resolution), int((y - self.origin.position.y) / self.resolution)
         map_array_position = self.width * pose_height + pose_width
         # Transfer the pose to the grid (2D)
