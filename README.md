@@ -116,7 +116,14 @@ A test of the full algorithm is provided in this section.
 cd ~/WS_NAME
 source devel/setup.bash
 roslaunch mm3 gazebo.launch
+# Open a new terminal and go to your WS
+cd ~/WS_NAME
+source devel/setup.bash
 roslaunch mm3 move_base.launch
+# Please use Rviz or move_base client to give it a goal.
+# Open a new terminal and go to your WS
+cd ~/WS_NAME
+source devel/setup.bash
 rosrun mm3 main.py
 ```
 
