@@ -128,6 +128,19 @@ rosrun mm3 main.py
 ```
 
 
-## Visualization
+## Function test & Visualization
+Given a goal (x, y, theta) = (3.0, -3.0, 1.2), and split the goal into three subgoal.  
+
+```
+Direction: Backward, Steering: Left, Length: 0.08323819773168228
+Direction: Forward, Steering: Right, Length: 1.1361256916444114
+Direction: Backward, Steering: Left, Length: 0.4303273144719695
+Direction: Forward, Steering: Left, Length: 0.004855265066903591
+Direction: Forward, Steering: Straight, Length: 1.3951367301586677
+Direction: Forward, Steering: Right, Length: 8.41914885225687e-06
+Direction: Backward, Steering: Right, Length: 0.6589035400222363
+Direction: Forward, Steering: Left, Length: 1.5248737630783855
+Direction: Forward, Steering: Right, Length: 0.19958757411454897
+```
 
 Publish the whole collision free Reed-Shepp curve as a path topic so that it can be viewed in Rviz. 
