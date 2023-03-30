@@ -28,7 +28,7 @@ roscore
 # Open a new terminal and go to your WS
 cd ~/WS_NAME
 source devel/setup.bash
-rosrun mm3 rs_test.py -x {x_pos} -y {y_pos} -theta {theta_pos}
+rosrun mm3 rs_test.py -x {x_pos} -y {y_pos} -theta {theta}
 ```
 
 The results are shown as follows:
