@@ -11,8 +11,8 @@
     <rosparam file="$(find mm3)/path_planning/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find mm3)/path_planning/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find mm3)/path_planning/config/local_costmap_params.yaml" command="load" />
-    <param name="local_costmap/width" value="5.0"/>
-    <param name="local_costmap/height" value="5.0"/>
+    <param name="local_costmap/width" value="15.0"/>
+    <param name="local_costmap/height" value="15.0"/>
     <rosparam file="$(find mm3)/path_planning/config/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find mm3)/path_planning/config/dwa_local_planner_params.yaml" command="load" />
     <rosparam file="$(find mm3)/path_planning/config/navfn_global_planner_params.yaml" command="load" />
