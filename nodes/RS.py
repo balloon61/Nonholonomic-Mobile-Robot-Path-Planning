@@ -5,9 +5,7 @@ import rospy
 import sys
 sys.path.append('/utils')
 
-from calculation import *
 from transform import *
-from map import *
 from map import *
 from global_path import *
 from executor import *
@@ -18,7 +16,6 @@ from geometry import *
 
 from bidict import bidict
 from itertools import chain
-from geometry_msgs.msg import PoseStamped
 
 
 EPS = 1e-6
@@ -68,7 +65,7 @@ class RS_Path_Collision_Check:
     use map object and path object
     """
 
-    def __init__(self, map_topic:string="map", path_topic:string="/move_base/DWAPlannerROS/global_plan"):
+    def __init__(self, map_topic:string="map", path_topic:string="/move_base/NavfnROS/make_plan"):
         self.RSpath = None
         self.map = Map(map_topic=map_topic)
         self.map.Wait_for_map_update()
@@ -94,8 +91,7 @@ class RS_Path_Collision_Check:
         Return a list of points along the Reed-Shepp path 
         """        
         path_point = list()
-        theta = 0.
-        pos = np.array([0., 0., theta])
+        pos = np.array([0., 0., 0.])
         for sub in self.RSpath: # SubPath(t, 'Left', 'Forward')    
             steering = sub.Steering_dict[sub.steering]
             dir = sub.Direction_dict[sub.direction]
@@ -136,7 +132,6 @@ class ReedShepp_Path:
 
     def __init__(self, constraint:float = 1.):
         self.path_publisher = rospy.Publisher("RS_path", Path, queue_size=10)
-        rospy.sleep(1.0)
         self.path = []
         self.best_path = None
         self.rad = constraint
@@ -151,7 +146,8 @@ class ReedShepp_Path:
         """
         self.show_path(total_path)
         poses = []
-        points = self.collision_checker.Get_path_points(number_of_points=1050)
+        self.collision_checker.get_RSPath(total_path)
+        points = self.collision_checker.Get_path_points(number_of_points=100)
         for pt in points:
 
             newPose = PoseStamped()
@@ -174,7 +170,7 @@ class ReedShepp_Path:
         self.RSPath_topic.poses = poses
         rospy.loginfo("publishing path")
 
-        # self.path_publisher.publish(self.RSPath_topic)
+        self.path_publisher.publish(self.RSPath_topic)
 
     def change_constraint(self, new_constraint:float):
         self.rad = new_constraint
@@ -206,34 +202,48 @@ class ReedShepp_Path:
             length += abs(sub.distance)
         return length
     
-    def find_path(self) -> list():
+    def find_path(self, goal_pos:np.ndarray=np.array([5.2, -6.0, 0.2    ])) -> list():
         """
         This function find the RS paths from the global path get from moveit
         Gets a list of waypoint and design the RS curve from waypointt to next waypoint
         """
         # wait for global path update
-        rospy.loginfo("please set your goal point via move base client or Rviz")
-        self.collision_checker.global_path.Wait_for_path_update()
-        self.RSPath_topic.header = self.collision_checker.global_path.header
+        rospy.loginfo("Generating path")
+        # self.robot.movebase_client(goal_pos[0], goal_pos[1], goal_pos[2])
+        self.collision_checker.global_path.generate_path(self.robot.pose, goal_pos=goal_pos)
+        rospy.sleep(1.0)
+        # self.collision_checker.global_path.Wait_for_path_update()
+
+        self.RSPath_topic.header.seq = 1
+        self.RSPath_topic.header.stamp = rospy.Time.now()
+        self.RSPath_topic.header.frame_id = "map"
+        
         # get way points
-        number_of_waypoints = 4
+        number_of_waypoints = 2
         self.collision_checker.global_path.Get_Waypoints(interval=number_of_waypoints)
         
         total_path = list()
         # rospy.loginfo("waypoints:", self.collision_checker.global_path.way_points)
         start = self.collision_checker.global_path.way_points[0]
+        n = len(self.collision_checker.global_path.way_points)
         # initialize two frame
         frame1 = tf(3)
         frame2 = tf(3)
         # set up frame1
         frame1.set_translation([start.pose.position.x, start.pose.position.y, 0])
-        _, _, yaw = get_rotation(start.pose.orientation)
+        # _, _, yaw = get_rotation(start.pose.orientation)
+        yaw = self.robot.pose[2] # np.arctan2(start.pose.position.y, start.pose.position.x)
         frame1.set_rotation(rotvec=[0., 0., yaw])
-        for way_pts in self.collision_checker.global_path.way_points[1:-1]:
+        for way_pts in self.collision_checker.global_path.way_points[1:n]:
 
             # setup frame2
             frame2.set_translation([way_pts.pose.position.x, way_pts.pose.position.y, 0])
-            _, _, yaw2 = get_rotation(way_pts.pose.orientation)
+            if way_pts.pose.orientation.w == 1:
+                rospy.loginfo("Goal not reached yet")
+                yaw2 = np.arctan2(way_pts.pose.position.y - frame1.t_vec[1], way_pts.pose.position.x - frame1.t_vec[0])
+            else:
+                _, _, yaw2 = get_rotation(way_pts.pose.orientation)
+
             frame2.set_rotation(rotvec=[0., 0., yaw2])      
 
             # Transofrmation
@@ -244,6 +254,7 @@ class ReedShepp_Path:
             x = x / self.rad
             y = y / self.rad
             # find Reed-Shepp path
+            print(x, y, theta)
             paths = self.find_RSpath(x, y, theta)
         
             for path in paths:
@@ -253,10 +264,14 @@ class ReedShepp_Path:
                 # PSCC = RS_Path_Collision_Check(path)
                 self.collision_checker.get_RSPath(path)
                 pts = self.collision_checker.Get_path_points(number_of_points=20)
+                # xf, yf, thetaf = pts[-1]
+                # if abs(xf - x) > 0.1 or abs(yf - y) > 0.1 or abs(thetaf - theta) > 0.1:
+                #     continue 
                 # true if no collision, since the paths is already sorted, it return the shortest path without collision
                 if self.collision_checker.Collision_detect(pts) == False:
                     total_path.append(path)
                     break
+            
             rospy.loginfo("collision free RS path found")
             self.show_path(total_path[-1])
             # update frame1 to next frane

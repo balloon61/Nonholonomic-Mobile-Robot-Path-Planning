@@ -7,6 +7,36 @@ import rospy
 from RS import *
 import argparse
 
+
+def Get_path_points(RSpath, number_of_points:int=100) -> list:
+    """
+    Input: The number of points
+    Output: A list of points
+    Return a list of points along the Reed-Shepp path 
+    """        
+    path_point = list()
+    pos = np.array([0., 0., 0.])
+    for sub in RSpath: # SubPath(t, 'Left', 'Forward')    
+        steering = sub.Steering_dict[sub.steering]
+        dir = sub.Direction_dict[sub.direction]
+
+        if sub.steering == 'Straight':
+            # path_point.append(self.get_line(pos, sub.distance, interval, dir))
+            path_point = path_point + get_line(np.array(pos), sub.distance, number_of_points, dir)
+        else:
+            # path_point.append(self.get_curve(pos, sub.distance, steering, dir, interval, sub.r))
+            path_point = path_point + get_curve(np.array(pos), sub.distance, steering, dir, number_of_points, sub.r)
+            # Get the next theta
+            # theta = theta + sub.distance * dir * steering / sub.r
+
+        print(path_point[-1])
+        pos = path_point[-1]
+            
+    return path_point
+
+
+
+
 if __name__ == '__main__':
 
     rospy.init_node("RS")
@@ -23,8 +53,10 @@ if __name__ == '__main__':
     
     rospy.loginfo(f"goal pose ({args.x[0]}, {args.y[0]}, {args.theta[0]})")
         
-    paths = RS_path.find_RSpath(args.x[0] , args.y[0], args.theta[0])
-
+    paths = RS_path.find_RSpath(args.x[0], args.y[0], args.theta[0])
+    for path in paths:
+        RS_path.show_path(path)
+        Get_path_points(path)
     # poses = [[0.5, 0.5, 1.5], [0.5, 0.5, 0.5], [0.5, -0.5, 1.5], [1.5, 1.5, 0.5], [1.5, 1.5, 0.0], [1.5, 1.5, 1.5], [2, 2, 3], [3, 0.2, 0]]
 
 
@@ -48,6 +80,15 @@ if __name__ == '__main__':
 
 
 
+# Direction: Backward, Steering: Left, Length: 0.08323819773168228
+# Direction: Forward, Steering: Right, Length: 1.1361256916444114
+# Direction: Backward, Steering: Left, Length: 0.4303273144719695
+# Direction: Forward, Steering: Left, Length: 0.004855265066903591
+# Direction: Forward, Steering: Straight, Length: 1.3951367301586677
+# Direction: Forward, Steering: Right, Length: 8.41914885225687e-06
+# Direction: Backward, Steering: Right, Length: 0.6589035400222363
+# Direction: Forward, Steering: Left, Length: 1.5248737630783855
+# Direction: Forward, Steering: Right, Length: 0.19958757411454897
 
 
 

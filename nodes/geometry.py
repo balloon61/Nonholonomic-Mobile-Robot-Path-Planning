@@ -30,7 +30,7 @@ def get_curve(start:np.ndarray, length:float, steering:int, dir:int, number_of_p
 
     x, y, theta = start
     curve = list()
-    point_distance = length / (number_of_points * radius) 
+    point_distance = abs(length) / (number_of_points * radius) 
     center = np.array([-np.sin(theta) * steering * radius + x, np.cos(theta) * steering * radius + y, 0])
     # if the radius is 1, then the length is the radian you turn.
     for i in range(number_of_points + 1):

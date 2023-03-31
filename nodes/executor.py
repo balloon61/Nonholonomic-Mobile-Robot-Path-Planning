@@ -42,6 +42,7 @@ class ROBOT:
 
         self.arm_reach_goal = rospy.Publisher('/arm_goal', String, queue_size=10)
 
+        self.pose = np.array([0., 0., 0.])
         time.sleep(1)
 
         self.slide_height = -0.3
@@ -110,7 +111,13 @@ class ROBOT:
         goal.target_pose.pose.orientation.y = q[2]
         goal.target_pose.pose.orientation.z = q[3]
 
-
+        client.send_goal(goal)
+        wait = client.wait_for_result()
+        if not wait:
+            rospy.logerr("Action server not available!")
+            rospy.signal_shutdown("Action server not available!")
+        else:
+            return client.get_result()
 
 
 
