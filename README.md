@@ -107,6 +107,7 @@ Direction: Forward, Steering: Left, Length: 1.5933575602527768
 Building a world in Gazebo, and using the map_server in ROS to build the Map so that it's possible to check if the path is collision free.
 
 ![Screenshot from 2023-03-26 20-32-11](https://user-images.githubusercontent.com/55338365/227834849-44c5d3f8-aa52-473b-8b85-2ed2f0b968b0.png)
+![image](https://user-images.githubusercontent.com/55338365/231271179-6e613522-cb95-4a11-967c-03db8cd5eabd.png)
 
 ## Run the code/Test
 A test of the full algorithm is provided in this section.
@@ -139,7 +140,6 @@ Direction: Forward, Steering: Left, Length: 1.0747531939639037
 ```
 ![Screenshot from 2023-03-30 20-07-36](https://user-images.githubusercontent.com/55338365/229000051-a055af6b-dab7-4917-9e0a-786138f53d5d.png)
 
-![image](https://user-images.githubusercontent.com/55338365/231271179-6e613522-cb95-4a11-967c-03db8cd5eabd.png)
 
 
 
